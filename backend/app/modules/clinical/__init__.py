@@ -1,0 +1,1 @@
+"""Clinical bounded context models."""

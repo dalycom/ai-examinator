@@ -1,0 +1,1 @@
+"""AI Examinator backend application."""

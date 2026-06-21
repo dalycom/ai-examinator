@@ -1,0 +1,35 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^backend/
+      - id: ruff-format
+        files: ^backend/
+
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.17.0
+    hooks:
+      - id: eslint
+        files: ^frontend/
+        types: [javascript, jsx, ts, tsx]
+        additional_dependencies:
+          - eslint@9.17.0
+          - eslint-config-next@15.1.0
+
+  - repo: local
+    hooks:
+      - id: backend-mypy
+        name: backend mypy
+        entry: bash -c 'cd backend && .venv/bin/mypy app 2>/dev/null || mypy app'
+        language: system
+        pass_filenames: false
+        files: ^backend/app/
+
+      - id: frontend-typecheck
+        name: frontend typecheck
+        entry: bash -c 'cd frontend && npm run typecheck --silent'
+        language: system
+        pass_filenames: false
+        files: ^frontend/src/

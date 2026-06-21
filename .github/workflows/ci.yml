@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ai_examinator
+          POSTGRES_PASSWORD: change_me_in_local_env
+          POSTGRES_DB: ai_examinator_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ai_examinator"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend
+        run: pip install -e ".[dev]"
+      - name: Lint
+        run: ruff check . && ruff format --check .
+      - name: Type check
+        run: mypy app
+      - name: Migration up/down
+        env:
+          MIGRATION_DATABASE_URL: postgresql+psycopg://ai_examinator:change_me_in_local_env@localhost:5432/ai_examinator_test
+          DATABASE_URL: postgresql+psycopg://ai_examinator_app:change_me_in_local_env@localhost:5432/ai_examinator_test
+          SECRET_KEY: test-secret-key-at-least-32-characters-long
+        run: |
+          alembic upgrade head
+          alembic downgrade base
+          alembic upgrade head
+      - name: Tests
+        env:
+          TEST_DATABASE_URL: postgresql+psycopg://ai_examinator:change_me_in_local_env@localhost:5432/ai_examinator_test
+          APP_DATABASE_URL: postgresql+psycopg://ai_examinator_app:change_me_in_local_env@localhost:5432/ai_examinator_test
+          MIGRATION_DATABASE_URL: postgresql+psycopg://ai_examinator:change_me_in_local_env@localhost:5432/ai_examinator_test
+          DATABASE_URL: postgresql+psycopg://ai_examinator_app:change_me_in_local_env@localhost:5432/ai_examinator_test
+          SECRET_KEY: test-secret-key-at-least-32-characters-long
+          REDIS_URL: redis://localhost:6379/0
+        run: pytest -q
+      - name: SAST (bandit)
+        run: bandit -r app -c pyproject.toml
+      - name: AI evaluation gates
+        run: python -m app.scripts.run_ai_eval
+      - name: Dependency audit
+        run: pip install pip-audit && pip-audit
+      - name: Build backend image
+        run: docker build -t ai-examinator-backend:ci .
+      - name: Trivy scan backend image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ai-examinator-backend:ci
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Type check
+        run: npm run typecheck
+      - name: Build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+        run: npm run build
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+      - name: Build frontend image
+        run: docker build -t ai-examinator-frontend:ci .
+      - name: Trivy scan frontend image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ai-examinator-frontend:ci
+          severity: CRITICAL,HIGH
+          exit-code: "1"
