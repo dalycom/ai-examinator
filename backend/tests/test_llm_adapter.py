@@ -13,7 +13,7 @@ from app.modules.ai.eval_dataset import EVAL_CASES, case_count
 
 
 def test_eval_dataset_has_minimum_cases() -> None:
-    assert case_count() >= 50
+    assert case_count() >= 70
 
 
 def test_stub_eval_suite_passes_all_cases() -> None:

@@ -28,11 +28,20 @@ def main() -> int:
         action="store_true",
         help="Print per-case failures",
     )
+    parser.add_argument(
+        "--persist",
+        action="store_true",
+        help="Persist eval results to eval_run table (requires DB)",
+    )
     args = parser.parse_args()
 
     adapter = get_llm_adapter() if args.provider == "configured" else StubLlmAdapter()
     metrics = run_red_flag_eval(adapter=adapter) if args.red_flags_only else run_eval_suite(adapter=adapter)
 
+    from app.adapters.llm.settings_resolver import resolve_llm_config
+    from app.core.config import get_settings
+
+    llm = resolve_llm_config(get_settings())
     payload = {
         "dataset_size": case_count(),
         "total_cases": metrics.total_cases,
@@ -44,8 +53,22 @@ def main() -> int:
         "suggestion_count_avg": round(metrics.suggestion_count_avg, 2),
         "passed": metrics.passed,
         "provider_mode": args.provider,
+        "model_id": llm.model_id,
+        "preset": llm.preset_name,
+        "prompt_version": llm.prompt_version,
     }
     print(json.dumps(payload, indent=2))
+
+    if args.persist:
+        from app.core.database import SessionLocal
+        from app.modules.ai.eval_persistence import persist_eval_run
+
+        db = SessionLocal()
+        try:
+            run = persist_eval_run(db, metrics, provider_mode=args.provider)
+            print(f"Persisted eval_run id={run.id}", file=sys.stderr)
+        finally:
+            db.close()
 
     if args.verbose and metrics.failed_cases:
         print("\nFailed cases:", file=sys.stderr)

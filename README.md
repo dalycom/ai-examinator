@@ -87,6 +87,7 @@ All deliverables live in [`docs/`](./docs/). Start with the [documentation index
 | Phase 6 Completion Report | [docs/phase-6-completion-report.md](./docs/phase-6-completion-report.md) |
 | Pilot Deployment Guide | [docs/pilot-deployment-guide.md](./docs/pilot-deployment-guide.md) |
 | AI Agent Training Roadmap | [docs/ai-agent-training-roadmap.md](./docs/ai-agent-training-roadmap.md) |
+| AI Training Phase Status | [docs/ai-training-phase-status.md](./docs/ai-training-phase-status.md) |
 | Clinical Validation Checklist | [docs/clinical-validation-checklist.md](./docs/clinical-validation-checklist.md) |
 | Compliance (DPIA, privacy, residency) | [docs/compliance/](./docs/compliance/) |
 | Architecture Decision Records | [docs/adr/](./docs/adr/) |

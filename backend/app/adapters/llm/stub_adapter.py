@@ -21,7 +21,8 @@ _DURATION_PATTERN = re.compile(
     r"\d+\s*(?:minute|minutes|hour|hours|day|days|week|weeks|month|months|year|years)"
     r"|(?:one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+"
     r"(?:minute|minutes|hour|hours|day|days|week|weeks|month|months|year|years)"
-    r"|since yesterday|since last night|this morning|ten minutes ago|45 minutes ago|today"
+    r"|since yesterday|since last night|this morning|ten minutes ago|45 minutes ago|two hours ago|today"
+    r"|ten days ago|three hours|two minutes|ce matin|deux minutes|شهرين"
     r"|depuis (?:une semaine|hier|\d+)"
     r"|depuis une semaine|depuis hier"
     r"|منذ (?:أسبوع|يوم|أمس|\d+)"
@@ -30,7 +31,7 @@ _DURATION_PATTERN = re.compile(
 )
 _MEDICATION_PATTERN = re.compile(
     r"\b(metformin|lisinopril|warfarin|aspirin|amoxicillin|methylphenidate|tiotropium|"
-    r"inhaler|metformine|penicillin)\b",
+    r"inhaler|metformine|penicillin|ibuprofen|sleeping pill)\b",
     re.IGNORECASE,
 )
 _ALLERGY_PATTERN = re.compile(
@@ -39,7 +40,8 @@ _ALLERGY_PATTERN = re.compile(
 )
 _VITAL_PATTERN = re.compile(r"\b(blood pressure|bp|160|140/\d+|hypertension|glycémies|sugar)\b", re.IGNORECASE)
 _EXAM_PATTERN = re.compile(
-    r"\b(swollen|swelling|rash|blister|blisters|red|tender|wheez|drooped|slurred|scaly|plaques)\b",
+    r"\b(swollen|swelling|rash|blister|blisters|red|tender|wheez|drooped|slurred|scaly|plaques|"
+    r"mole|knuckles|bruising|petechiae|tick)\b",
     re.IGNORECASE,
 )
 _HISTORY_PATTERN = re.compile(r"\b(last visit|prior|history|discussed|follow-up|follow up)\b", re.IGNORECASE)

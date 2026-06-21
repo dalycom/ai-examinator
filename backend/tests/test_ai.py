@@ -174,10 +174,10 @@ def test_ai_eval_harness() -> None:
     from app.modules.ai.eval import run_eval_suite, run_stub_eval
     from app.modules.ai.eval_dataset import case_count
 
-    assert case_count() >= 50
+    assert case_count() >= 70
     metrics = run_stub_eval()
     assert metrics.passed is True
-    assert metrics.total_cases >= 50
+    assert metrics.total_cases >= 70
     assert metrics.grounding_rate == 1.0
     assert metrics.red_flag_recall == 1.0
 

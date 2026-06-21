@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     rate_limit_api_per_minute: int = 300
     llm_provider: str = "stub"
     llm_model_id: str = "stub-clinical-v1"
+    llm_model_preset: str | None = None
     llm_endpoint_url: str | None = None
     llm_api_key: str | None = None
     llm_timeout_seconds: int = 120

@@ -9,6 +9,7 @@ import httpx
 from app.adapters.llm.port import LlmExtractionResult, LlmPort, TranscriptInput
 from app.adapters.llm.prompts import EXTRACTION_SYSTEM_PROMPT, build_extraction_user_prompt
 from app.adapters.llm.response_parser import LlmResponseParseError, parse_extraction_response
+from app.adapters.llm.settings_resolver import resolve_llm_config
 from app.adapters.llm.stub_adapter import StubLlmAdapter
 from app.core.config import get_settings
 
@@ -25,7 +26,8 @@ class LocalLlmAdapter(LlmPort):
         locale: str = "en",
     ) -> LlmExtractionResult:
         settings = get_settings()
-        if not settings.llm_endpoint_url:
+        llm = resolve_llm_config(settings)
+        if not llm.endpoint_url:
             logger.warning("LLM_ENDPOINT_URL not configured — falling back to stub adapter")
             result = StubLlmAdapter().extract_clinical_information(transcript=transcript, locale=locale)
             return result
@@ -43,20 +45,20 @@ class LocalLlmAdapter(LlmPort):
             locale=locale,
         )
         request_body: dict[str, Any] = {
-            "model": settings.llm_model_id,
+            "model": llm.model_id,
             "messages": [
                 {"role": "system", "content": EXTRACTION_SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
-            "temperature": settings.llm_temperature,
+            "temperature": llm.temperature,
             "response_format": {"type": "json_object"},
         }
 
         headers = {"Content-Type": "application/json"}
-        if settings.llm_api_key:
-            headers["Authorization"] = f"Bearer {settings.llm_api_key}"
+        if llm.api_key:
+            headers["Authorization"] = f"Bearer {llm.api_key}"
 
-        endpoint = settings.llm_endpoint_url.rstrip("/")
+        endpoint = llm.endpoint_url.rstrip("/")
         if endpoint.endswith("/chat/completions"):
             url = endpoint
         elif endpoint.endswith("/v1"):
@@ -65,7 +67,7 @@ class LocalLlmAdapter(LlmPort):
             url = f"{endpoint}/v1/chat/completions"
 
         try:
-            with httpx.Client(timeout=settings.llm_timeout_seconds) as client:
+            with httpx.Client(timeout=llm.timeout_seconds) as client:
                 response = client.post(url, headers=headers, json=request_body)
                 response.raise_for_status()
                 payload = response.json()
@@ -81,17 +83,18 @@ class LocalLlmAdapter(LlmPort):
 
         parameters = {
             "locale": locale,
-            "temperature": settings.llm_temperature,
+            "temperature": llm.temperature,
             "endpoint": url,
             "transcript_segments": len(transcript),
+            "preset": llm.preset_name,
         }
         try:
             return parse_extraction_response(
                 content,
                 transcript=transcript,
-                model_id=settings.llm_model_id,
+                model_id=llm.model_id,
                 provider="self_hosted",
-                prompt_version=settings.llm_prompt_version,
+                prompt_version=llm.prompt_version,
                 parameters=parameters,
             )
         except LlmResponseParseError as exc:
