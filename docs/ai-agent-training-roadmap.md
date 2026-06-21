@@ -34,10 +34,20 @@ The AI agent should reliably:
 
 ### Recommended synthetic case library (minimum 50 cases)
 
+Implemented in `backend/app/modules/ai/eval_dataset.py` — **57 cases** covering:
+
 - Primary care: headache, chest pain, diabetes follow-up, pediatric fever
 - Red-flag scenarios: thunderclap headache, STEMI symptoms, suicidal ideation (high sensitivity)
-- Multilingual: parallel EN/AR/FR transcripts for the same case
+- Multilingual: parallel EN/AR/FR transcripts for the same case types
 - Edge cases: prompt injection in transcript, multi-speaker confusion, incomplete exams
+
+Run the full suite:
+
+```bash
+docker compose exec backend python -m app.scripts.run_ai_eval
+docker compose exec backend python -m app.scripts.run_ai_eval --verbose          # show failures
+docker compose exec backend python -m app.scripts.run_ai_eval --provider configured  # test live LLM
+```
 
 ---
 
@@ -54,11 +64,12 @@ flowchart LR
 
 | Step | Action |
 |---|---|
-| 1 | Keep **default self-hosted** path (`LLM_PROVIDER=local`); complete `LocalLlmAdapter` with your chosen clinical LLM |
-| 2 | Define **prompt versions** in `prompt_version` table; pin active version per org |
-| 3 | Run **`python -m app.scripts.run_ai_eval`** on every model/prompt change (CI gate) |
+| 1 | Keep **default self-hosted** path (`LLM_PROVIDER=local`); `LocalLlmAdapter` calls OpenAI-compatible `/v1/chat/completions` |
+| 2 | Set `LLM_ENDPOINT_URL` (e.g. Ollama at `http://host.docker.internal:11434`) and `LLM_MODEL_ID` |
+| 3 | Run **`python -m app.scripts.run_ai_eval --provider configured`** on every model/prompt change |
 | 4 | Enable **`AI_USE_CELERY_EXTRACTION=true`** for async extraction at scale |
 | 5 | Log all runs to `ai_extraction_run` + `ai_provenance` for audit |
+| 6 | Pin **`LLM_PROMPT_VERSION`** per org in governance settings |
 
 ---
 
@@ -73,7 +84,7 @@ flowchart LR
 | HITL compliance | 0 auto-apply to signed notes | integration tests |
 | Latency p95 | < 30s extraction (pilot SLA) | load tests |
 
-Extend `backend/app/modules/ai/eval.py` with additional cases and persist results to `eval_run`.
+Extend `backend/app/modules/ai/eval_dataset.py` with additional cases and persist results to `eval_run`.
 
 ---
 
@@ -113,8 +124,14 @@ Dashboard KPIs (`/dashboard`) track pending AI reviews and consultations in prog
 docker compose exec backend python -m app.scripts.seed_synthetic
 docker compose exec backend python -m app.scripts.seed_demo_clinical
 
-# AI eval gates (must pass)
+# AI eval gates (must pass — 57 synthetic cases)
 docker compose exec backend python -m app.scripts.run_ai_eval
+
+# Self-hosted LLM (Ollama example)
+# LLM_PROVIDER=local
+# LLM_ENDPOINT_URL=http://host.docker.internal:11434
+# LLM_MODEL_ID=llama3.1:8b
+# docker compose exec backend python -m app.scripts.run_ai_eval --provider configured
 
 # Load smoke
 python scripts/load_smoke.py --base-url http://localhost:8000 --auth-smoke
@@ -146,7 +163,7 @@ These are structural platform guarantees — training cannot override them.
 ## 9. Next immediate actions
 
 1. Run `seed_demo_clinical` and verify the **professional dashboard** at `/en/dashboard`.
-2. Expand eval dataset beyond `synthetic_headache_v1`.
-3. Implement production body in `LocalLlmAdapter` pointing to your clinical LLM.
+2. Review the **57-case eval library** in `backend/app/modules/ai/eval_dataset.py`.
+3. Configure `LLM_PROVIDER=local` + `LLM_ENDPOINT_URL` and run `--provider configured` eval.
 4. Schedule clinician UAT using the clinical validation checklist.
 5. Execute controlled pilot per pilot deployment guide.

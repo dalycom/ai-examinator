@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     llm_provider: str = "stub"
     llm_model_id: str = "stub-clinical-v1"
     llm_endpoint_url: str | None = None
+    llm_api_key: str | None = None
+    llm_timeout_seconds: int = 120
+    llm_temperature: float = 0.1
+    llm_prompt_version: str = "extraction-v1"
     mfa_issuer: str = "AI-Examinator"
     cors_origins: str = "http://localhost:3000"
     object_storage_endpoint: str = "http://localhost:9000"

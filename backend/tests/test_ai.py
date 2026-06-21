@@ -171,9 +171,15 @@ def test_ai_async_extraction_execute(client: TestClient, db) -> None:
 
 
 def test_ai_eval_harness() -> None:
-    from app.modules.ai.eval import run_stub_eval
+    from app.modules.ai.eval import run_eval_suite, run_stub_eval
+    from app.modules.ai.eval_dataset import case_count
 
+    assert case_count() >= 50
     metrics = run_stub_eval()
     assert metrics.passed is True
+    assert metrics.total_cases >= 50
     assert metrics.grounding_rate == 1.0
-    assert metrics.red_flag_present is True
+    assert metrics.red_flag_recall == 1.0
+
+    subset = run_eval_suite()
+    assert subset.passed is True
